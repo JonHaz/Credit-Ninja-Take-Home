@@ -6,4 +6,4 @@ SELECT
     TRIM(last_name) AS last_name,
     LOWER(email) AS email,
     created_at
-FROM {{ source('bronze', 'customers') }}
+FROM {{ source('snowflake', 'customers') }}
