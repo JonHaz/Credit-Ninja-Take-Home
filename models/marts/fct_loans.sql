@@ -6,20 +6,43 @@
     )
 }}
 
+-- Pull the latest loan record per loan_id
 WITH loans AS (
     SELECT
         loan_id,
         application_id,
         customer_id,
-        CAST(loan_amount AS DECIMAL(10,2)) AS loan_amount,
-        CAST(interest_rate AS DECIMAL(5,2)) AS interest_rate,
-        CAST(start_date AS DATE) AS start_date,
-        CAST(end_date AS DATE) AS end_date,
+        loan_amount,
+        interest_rate,
+        start_date,
+        end_date,
         status,
-        CURRENT_TIMESTAMP() AS record_loaded_at
-    FROM {{ ref('stg_loans') }}
+        record_loaded_at
+    FROM (
+        SELECT *,
+               ROW_NUMBER() OVER (PARTITION BY loan_id ORDER BY record_loaded_at DESC) AS rn
+        FROM {{ ref('stg_loans') }}
+    )
+    WHERE rn = 1
 ),
 
+-- Pull the latest customer record per customer_id
+customers AS (
+    SELECT
+        customer_id,
+        first_name,
+        last_name,
+        email,
+        record_loaded_at
+    FROM (
+        SELECT *,
+               ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY record_loaded_at DESC) AS rn
+        FROM {{ ref('stg_customers') }}
+    )
+    WHERE rn = 1
+),
+
+-- Join loans and customers
 joined AS (
     SELECT
         l.loan_id,
@@ -31,35 +54,14 @@ joined AS (
         l.end_date,
         DATEDIFF(month, l.start_date, l.end_date) AS loan_term_months,
         DATE_TRUNC('month', l.start_date) AS disbursed_month,
-        l.status,
+        l.status AS loan_status,
         c.first_name,
         c.last_name,
         c.email,
-        CURRENT_TIMESTAMP() AS record_loaded_at
+        GREATEST(l.record_loaded_at, c.record_loaded_at) AS record_loaded_at
     FROM loans l
-    LEFT JOIN {{ ref('stg_customers') }} c
+    LEFT JOIN customers c
         ON l.customer_id = c.customer_id
-),
-
-deduped AS (
-    -- Keep only the most recent record per loan_id (if duplicates exist)
-    SELECT
-    loan_id,
-    ANY_VALUE(application_id) AS application_id,
-    ANY_VALUE(customer_id) AS customer_id,
-    ANY_VALUE(loan_amount) AS loan_amount,
-    ANY_VALUE(interest_rate) AS interest_rate,
-    ANY_VALUE(start_date) AS start_date,
-    ANY_VALUE(end_date) AS end_date,
-    ANY_VALUE(loan_term_months) AS loan_term_months,
-    ANY_VALUE(disbursed_month) AS disbursed_month,
-    ANY_VALUE(status) AS status,
-    ANY_VALUE(first_name) AS first_name,
-    ANY_VALUE(last_name) AS last_name,
-    ANY_VALUE(email) AS email,
-    MAX(record_loaded_at) AS record_loaded_at
-    FROM joined
-    GROUP BY loan_id
 )
 
 SELECT
@@ -76,16 +78,13 @@ SELECT
     end_date,
     loan_term_months,
     disbursed_month,
-    status AS loan_status,
+    loan_status,
     record_loaded_at,
     CURRENT_TIMESTAMP() AS record_updated_at
-FROM deduped
+FROM joined
 
 {% if is_incremental() %}
-  -- Only merge new or recently updated loans
-  WHERE loan_id IN (
-      SELECT loan_id
-      FROM {{ ref('stg_loans') }}
-      WHERE start_date > (SELECT COALESCE(MAX(start_date), '1900-01-01') FROM {{ this }})
+  WHERE record_loaded_at > (
+      SELECT COALESCE(MAX(record_loaded_at), '1900-01-01') FROM {{ this }}
   )
 {% endif %}
