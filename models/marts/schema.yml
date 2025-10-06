@@ -5,10 +5,12 @@ models:
     description: "Dimension table containing unique customer records."
     columns:
       - name: customer_id
+        description: "Unique identifier for each customer."
         tests:
           - not_null
           - unique
       - name: email
+        description: "Customer email address, standardized to lowercase."
         tests:
           - not_null
 
@@ -16,23 +18,27 @@ models:
     description: "Incrementally loaded fact table capturing approved loans and related metrics."
     columns:
       - name: loan_id
+        description: "Primary key for the loan fact table."
         tests:
           - not_null
           - unique
       - name: customer_id
+        description: "Foreign key linking to dim_customers."
         tests:
           - relationships:
               arguments:
                 to: ref('dim_customers')
                 field: customer_id
       - name: start_date
+        description: "Loan disbursement date."
         tests:
           - not_null
           
   - name: dim_dates
-    description: "Calendar dimension providing derived time attributes."
+    description: "Calendar dimension providing derived time attributes for analytics."
     columns:
       - name: date_actual
+        description: "Calendar date value."
         tests:
           - not_null
           - unique
@@ -41,10 +47,12 @@ models:
     description: "Fact table containing all loan payment transactions."
     columns:
       - name: payment_id
+        description: "Unique identifier for each payment."
         tests:
           - not_null
           - unique
       - name: loan_id
+        description: "Foreign key linking to fct_loans."
         tests:
           - relationships:
               arguments:
