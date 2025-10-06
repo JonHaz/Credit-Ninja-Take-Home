@@ -20,12 +20,12 @@ WITH source AS (
 deduped AS (
     -- Keep only the latest record per customer_id (if source has duplicates)
     SELECT
-        customer_id,
-        FIRST_VALUE(first_name) OVER (PARTITION BY customer_id ORDER BY customer_created_at DESC) AS first_name,
-        FIRST_VALUE(last_name) OVER (PARTITION BY customer_id ORDER BY customer_created_at DESC) AS last_name,
-        FIRST_VALUE(email) OVER (PARTITION BY customer_id ORDER BY customer_created_at DESC) AS email,
-        MAX(customer_created_at) AS customer_created_at,
-        MAX(record_loaded_at) AS record_loaded_at
+    customer_id,
+    ANY_VALUE(first_name) AS first_name,
+    ANY_VALUE(last_name) AS last_name,
+    ANY_VALUE(email) AS email,
+    MAX(customer_created_at) AS customer_created_at,
+    MAX(record_loaded_at) AS record_loaded_at
     FROM source
     GROUP BY customer_id
 )
