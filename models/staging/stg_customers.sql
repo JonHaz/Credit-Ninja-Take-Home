@@ -6,7 +6,7 @@
     )
 }}
 
-WITH source AS (
+
     SELECT
         customer_id,
         TRIM(first_name) AS first_name,
@@ -15,4 +15,4 @@ WITH source AS (
         created_at AS customer_created_at,
         CURRENT_TIMESTAMP() AS record_loaded_at
     FROM {{ ref('stg_customers') }}
-),
+
