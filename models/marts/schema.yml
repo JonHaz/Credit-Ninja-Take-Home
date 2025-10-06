@@ -12,7 +12,7 @@ models:
         tests:
           - not_null
 
-   - name: fct_loans
+  - name: fct_loans
     description: "Incrementally loaded fact table capturing approved loans and related metrics."
     columns:
       - name: loan_id
