@@ -21,3 +21,23 @@ models:
           - relationships:
               to: ref('dim_customers')
               field: customer_id
+  - name: dim_dates
+    description: "Calendar dimension providing derived time attributes."
+    columns:
+      - name: date_actual
+        tests:
+          - not_null
+          - unique
+
+  - name: fct_payments
+    description: "Fact table containing all loan payment transactions."
+    columns:
+      - name: payment_id
+        tests:
+          - not_null
+          - unique
+      - name: loan_id
+        tests:
+          - relationships:
+              to: ref('fct_loans')
+              field: loan_id
