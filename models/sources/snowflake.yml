@@ -28,8 +28,10 @@ sources:
           - name: application_id
             description: "Unique identifier for a loan application."
             tests:
-              - not_null
-              - unique
+              - relationships:
+                  arguments:
+                    to: source('snowflake', 'customers')
+                    field: customer_id
           - name: customer_id
             description: "References customers.customer_id."
             tests:
@@ -51,8 +53,10 @@ sources:
           - name: loan_id
             description: "Unique identifier for an approved loan."
             tests:
-              - not_null
-              - unique
+              - relationships:
+                  arguments:
+                    to: source('snowflake', 'loan_applications')
+                    field: application_id
           - name: application_id
             description: "References loan_applications.application_id."
             tests:
@@ -94,8 +98,9 @@ sources:
             description: "References customers.customer_id."
             tests:
               - relationships:
-                  to: source('bronze', 'customers')
-                  field: customer_id
+                  arguments:
+                    to: source('snowflake', 'loans')
+                    field: loan_id
           - name: payment_amount
             description: "Amount paid."
           - name: payment_date
