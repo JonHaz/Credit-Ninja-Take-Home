@@ -1,0 +1,104 @@
+version: 2
+
+sources:
+  - name: snowflake
+    database: hazeley_consulting          
+    schema: credit_ninja                        
+    tables:
+      - name: customers
+        description: "Customer master table containing basic customer information."
+        columns:
+          - name: customer_id
+            description: "Unique identifier for a customer."
+            tests:
+              - not_null
+              - unique
+          - name: first_name
+            description: "Customer's first name."
+          - name: last_name
+            description: "Customer's last name."
+          - name: email
+            description: "Customer's email address."
+          - name: created_at
+            description: "Timestamp when the customer record was created."
+
+      - name: loan_applications
+        description: "Loan application records submitted by customers."
+        columns:
+          - name: application_id
+            description: "Unique identifier for a loan application."
+            tests:
+              - not_null
+              - unique
+          - name: customer_id
+            description: "References customers.customer_id."
+            tests:
+              - relationships:
+                  to: source('bronze', 'customers')
+                  field: customer_id
+          - name: application_date
+            description: "Date the application was submitted."
+          - name: loan_amount_requested
+            description: "Requested loan amount."
+          - name: status
+            description: "Application status (Pending, Approved, Rejected)."
+          - name: updated_at
+            description: "Timestamp of the last update."
+
+      - name: loans
+        description: "Approved loan records with associated customer and application IDs."
+        columns:
+          - name: loan_id
+            description: "Unique identifier for an approved loan."
+            tests:
+              - not_null
+              - unique
+          - name: application_id
+            description: "References loan_applications.application_id."
+            tests:
+              - relationships:
+                  to: source('bronze', 'loan_applications')
+                  field: application_id
+          - name: customer_id
+            description: "References customers.customer_id."
+            tests:
+              - relationships:
+                  to: source('bronze', 'customers')
+                  field: customer_id
+          - name: loan_amount
+            description: "Approved loan amount."
+          - name: interest_rate
+            description: "Annual interest rate."
+          - name: start_date
+            description: "Loan disbursement date."
+          - name: end_date
+            description: "Loan maturity date."
+          - name: status
+            description: "Loan status (Active, Paid, Defaulted)."
+
+      - name: payments
+        description: "Payments made toward loans, linked to both customer and loan IDs."
+        columns:
+          - name: payment_id
+            description: "Unique identifier for a payment."
+            tests:
+              - not_null
+              - unique
+          - name: loan_id
+            description: "References loans.loan_id."
+            tests:
+              - relationships:
+                  to: source('bronze', 'loans')
+                  field: loan_id
+          - name: customer_id
+            description: "References customers.customer_id."
+            tests:
+              - relationships:
+                  to: source('bronze', 'customers')
+                  field: customer_id
+          - name: payment_amount
+            description: "Amount paid."
+          - name: payment_date
+            description: "Date of payment."
+          - name: payment_type
+            description: "Type of payment (Scheduled, Prepayment)."
