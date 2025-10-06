@@ -68,7 +68,20 @@ models/
 
 ### **1. Ingestion**
 
-Raw transactional tables (`customers`, `loan_applications`, `loans`, `payments`) are ingested into Snowflake’s **Bronze schema** via an ELT tool (e.g., Fivetran, Airbyte, or Snowflake Streams).
+Instead of relying on an external ELT tool, this project uses a custom **Python script — `data_generator.py` — executed in Databricks** to simulate raw transactional data.  
+The script programmatically generates realistic records for the following tables:  
+- `customers`  
+- `loan_applications`  
+- `loans`  
+- `payments`  
+
+Each table is written directly into the **Bronze layer** of the Databricks Lakehouse (or Snowflake-compatible schema) using Delta tables.  
+This approach enables rapid prototyping, reproducibility, and consistent data volumes for testing the dbt transformation pipeline.
+
+Example workflow inside Databricks:
+1. Run `data_generator.py` to create or refresh synthetic source data.  
+2. Verify that generated tables exist in the Bronze schema (`hazeley_consulting.credit_ninja`).  
+3. Trigger dbt Cloud or local runs (`dbt build`) to transform this data into the Silver and Gold layers.
 
 ### **2. Transformation**
 
@@ -78,4 +91,12 @@ dbt Cloud orchestrates transformations:
 2. Staging models clean and cast data  
 3. Marts models aggregate and enrich data into facts and dimensions  
 
-Incremental logic ensures only new or changed records are processed, minimizing compute cost and runtime.
+**Performance Optimization:**  
+Incremental filters based on `record_loaded_at` minimize compute cost by processing only new or updated records.
+
+### **3. Testing and Documentation**
+
+- Automated **dbt tests** validate schema, data integrity, and relationships.  
+- **dbt Docs** provide a browsable catalog and lineage graph.  
+- Jobs in dbt Cloud are scheduled for **daily incremental runs**, with full-refresh capability for data resets.
+
