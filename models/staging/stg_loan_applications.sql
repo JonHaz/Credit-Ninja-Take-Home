@@ -1,7 +1,7 @@
 {{
     config(
         materialized='incremental',
-        unique_key='loan_id',
+        unique_key='application_id',
         incremental_strategy='merge'
     )
 }}
