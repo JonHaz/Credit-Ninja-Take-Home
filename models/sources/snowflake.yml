@@ -36,7 +36,7 @@ sources:
             description: "References customers.customer_id."
             tests:
               - relationships:
-                  to: source('bronze', 'customers')
+                  to: source('snowflake', 'customers')
                   field: customer_id
           - name: application_date
             description: "Date the application was submitted."
@@ -61,13 +61,13 @@ sources:
             description: "References loan_applications.application_id."
             tests:
               - relationships:
-                  to: source('bronze', 'loan_applications')
+                  to: source('snowflake', 'loan_applications')
                   field: application_id
           - name: customer_id
             description: "References customers.customer_id."
             tests:
               - relationships:
-                  to: source('bronze', 'customers')
+                  to: source('snowflake', 'customers')
                   field: customer_id
           - name: loan_amount
             description: "Approved loan amount."
@@ -92,7 +92,7 @@ sources:
             description: "References loans.loan_id."
             tests:
               - relationships:
-                  to: source('bronze', 'loans')
+                  to: source('snowflake', 'loans')
                   field: loan_id
           - name: customer_id
             description: "References customers.customer_id."
