@@ -7,4 +7,4 @@ SELECT
     CAST(payment_amount AS DECIMAL(10,2)) AS payment_amount,
     payment_date,
     payment_type
-FROM {{ source('bronze', 'payments') }}
+FROM {{ source('snowflake', 'payments') }}
