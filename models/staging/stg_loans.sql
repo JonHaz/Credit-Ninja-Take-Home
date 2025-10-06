@@ -1,4 +1,10 @@
-{{ config(materialized='table') }}
+{{
+    config(
+        materialized='incremental',
+        unique_key='loan_id',
+        incremental_strategy='merge'
+    )
+}}
 
 SELECT
     loan_id,
@@ -8,5 +14,8 @@ SELECT
     CAST(interest_rate AS DECIMAL(5,2)) AS interest_rate,
     start_date,
     end_date,
-    status
+    status,
+    CURRENT_TIMESTAMP() AS record_loaded_at
 FROM {{ source('snowflake', 'loans') }}
+
+
