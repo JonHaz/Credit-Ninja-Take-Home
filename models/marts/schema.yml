@@ -22,8 +22,9 @@ models:
       - name: customer_id
         tests:
           - relationships:
-              to: ref('dim_customers')
-              field: customer_id
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
       - name: start_date
         tests:
           - not_null
@@ -46,5 +47,6 @@ models:
       - name: loan_id
         tests:
           - relationships:
-              to: ref('fct_loans')
-              field: loan_id
+              arguments:
+                to: ref('fct_loans')
+                field: loan_id
