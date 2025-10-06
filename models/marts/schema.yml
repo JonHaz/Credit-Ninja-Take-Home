@@ -12,8 +12,8 @@ models:
         tests:
           - not_null
 
-  - name: fct_loans
-    description: "Fact table capturing loan transactions and metrics."
+   - name: fct_loans
+    description: "Incrementally loaded fact table capturing approved loans and related metrics."
     columns:
       - name: loan_id
         tests:
@@ -24,6 +24,10 @@ models:
           - relationships:
               to: ref('dim_customers')
               field: customer_id
+      - name: start_date
+        tests:
+          - not_null
+          
   - name: dim_dates
     description: "Calendar dimension providing derived time attributes."
     columns:
