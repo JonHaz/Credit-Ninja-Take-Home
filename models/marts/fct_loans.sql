@@ -44,20 +44,20 @@ joined AS (
 deduped AS (
     -- Keep only the most recent record per loan_id (if duplicates exist)
     SELECT
-        loan_id,
-        FIRST_VALUE(application_id) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS application_id,
-        FIRST_VALUE(customer_id) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS customer_id,
-        FIRST_VALUE(loan_amount) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS loan_amount,
-        FIRST_VALUE(interest_rate) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS interest_rate,
-        FIRST_VALUE(start_date) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS start_date,
-        FIRST_VALUE(end_date) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS end_date,
-        FIRST_VALUE(loan_term_months) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS loan_term_months,
-        FIRST_VALUE(disbursed_month) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS disbursed_month,
-        FIRST_VALUE(status) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS status,
-        FIRST_VALUE(first_name) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS first_name,
-        FIRST_VALUE(last_name) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS last_name,
-        FIRST_VALUE(email) OVER (PARTITION BY loan_id ORDER BY start_date DESC) AS email,
-        MAX(record_loaded_at) AS record_loaded_at
+    loan_id,
+    ANY_VALUE(application_id) AS application_id,
+    ANY_VALUE(customer_id) AS customer_id,
+    ANY_VALUE(loan_amount) AS loan_amount,
+    ANY_VALUE(interest_rate) AS interest_rate,
+    ANY_VALUE(start_date) AS start_date,
+    ANY_VALUE(end_date) AS end_date,
+    ANY_VALUE(loan_term_months) AS loan_term_months,
+    ANY_VALUE(disbursed_month) AS disbursed_month,
+    ANY_VALUE(status) AS status,
+    ANY_VALUE(first_name) AS first_name,
+    ANY_VALUE(last_name) AS last_name,
+    ANY_VALUE(email) AS email,
+    MAX(record_loaded_at) AS record_loaded_at
     FROM joined
     GROUP BY loan_id
 )
