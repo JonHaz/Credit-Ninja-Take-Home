@@ -1,0 +1,45 @@
+{{ config(materialized='table') }}
+
+WITH loans AS (
+    SELECT
+        loan_id,
+        application_id,
+        customer_id,
+        loan_amount,
+        interest_rate,
+        start_date,
+        end_date,
+        status,
+        DATEDIFF(MONTH, start_date, end_date) AS loan_term_months
+    FROM {{ ref('stg_loans') }}
+),
+
+joined AS (
+    SELECT
+        l.loan_id,
+        c.customer_id,
+        c.first_name,
+        c.last_name,
+        l.loan_amount,
+        l.interest_rate,
+        l.start_date,
+        l.end_date,
+        l.loan_term_months,
+        l.status,
+        TO_DATE(l.start_date) AS disbursed_date,
+        DATE_TRUNC('month', l.start_date) AS disbursed_month
+    FROM loans l
+    LEFT JOIN {{ ref('stg_customers') }} c
+        ON l.customer_id = c.customer_id
+)
+
+SELECT
+    ROW_NUMBER() OVER (ORDER BY loan_id) AS loan_sk,
+    loan_id,
+    customer_id,
+    loan_amount,
+    interest_rate,
+    loan_term_months,
+    disbursed_month,
+    status
+FROM joined
