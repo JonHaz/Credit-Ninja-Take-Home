@@ -1,4 +1,10 @@
-{{ config(materialized='table') }}
+{{
+    config(
+        materialized='incremental',
+        unique_key='payment_id',
+        incremental_strategy='merge'
+    )
+}}
 
 WITH payments AS (
     SELECT
