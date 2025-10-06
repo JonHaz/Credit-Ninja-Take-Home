@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: "Dimension table containing unique customer records."
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+
+  - name: fct_loans
+    description: "Fact table capturing loan transactions and metrics."
+    columns:
+      - name: loan_id
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        tests:
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
