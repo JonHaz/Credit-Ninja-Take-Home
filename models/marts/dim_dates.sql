@@ -1,4 +1,9 @@
-{{ config(materialized='table') }}
+{{ 
+    config(
+        materialized='incremental',
+        unique_key='date_actual'
+    ) 
+}}
 
 -- This model generates a date dimension covering the full loan/payment timeline.
 
