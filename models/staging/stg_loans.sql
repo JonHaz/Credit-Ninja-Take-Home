@@ -9,4 +9,4 @@ SELECT
     start_date,
     end_date,
     status
-FROM {{ source('bronze', 'loans') }}
+FROM {{ source('snowflake', 'loans') }}
