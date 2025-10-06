@@ -6,6 +6,7 @@
     )
 }}
 
+-- Pull the latest payment record per payment_id
 WITH payments AS (
     SELECT
         payment_id,
@@ -13,10 +14,51 @@ WITH payments AS (
         customer_id,
         CAST(payment_amount AS DECIMAL(10,2)) AS payment_amount,
         payment_date,
-        payment_type
-    FROM {{ ref('stg_payments') }}
+        payment_type,
+        record_loaded_at
+    FROM (
+        SELECT *,
+               ROW_NUMBER() OVER (PARTITION BY payment_id ORDER BY record_loaded_at DESC) AS rn
+        FROM {{ ref('stg_payments') }}
+    )
+    WHERE rn = 1
 ),
 
+-- Pull the latest loan record per loan_id
+loans AS (
+    SELECT
+        loan_id,
+        customer_id,
+        interest_rate,
+        start_date,
+        end_date,
+        status AS loan_status,
+        record_loaded_at
+    FROM (
+        SELECT *,
+               ROW_NUMBER() OVER (PARTITION BY loan_id ORDER BY record_loaded_at DESC) AS rn
+        FROM {{ ref('stg_loans') }}
+    )
+    WHERE rn = 1
+),
+
+-- Pull the latest customer record per customer_id
+customers AS (
+    SELECT
+        customer_id,
+        first_name,
+        last_name,
+        email,
+        record_loaded_at
+    FROM (
+        SELECT *,
+               ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY record_loaded_at DESC) AS rn
+        FROM {{ ref('stg_customers') }}
+    )
+    WHERE rn = 1
+),
+
+-- Join payments with loans and customers
 joined AS (
     SELECT
         p.payment_id,
@@ -25,42 +67,22 @@ joined AS (
         p.payment_amount,
         p.payment_date,
         p.payment_type,
-        l.status AS loan_status,
+        l.loan_status,
         l.interest_rate,
         l.start_date,
         l.end_date,
         c.first_name,
         c.last_name,
-        c.email
+        c.email,
+        GREATEST(p.record_loaded_at, l.record_loaded_at, c.record_loaded_at) AS record_loaded_at
     FROM payments p
-    LEFT JOIN {{ ref('stg_loans') }} l
+    LEFT JOIN loans l
         ON p.loan_id = l.loan_id
-    LEFT JOIN {{ ref('stg_customers') }} c
+    LEFT JOIN customers c
         ON p.customer_id = c.customer_id
-),
-
-enhanced AS (
-    SELECT
-        j.payment_id,
-        j.loan_id,
-        j.customer_id,
-        j.payment_amount,
-        j.payment_date,
-        j.payment_type,
-        j.loan_status,
-        j.interest_rate,
-        j.start_date,
-        j.end_date,
-        j.first_name,
-        j.last_name,
-        j.email,
-        CASE 
-            WHEN j.payment_date > j.end_date THEN TRUE ELSE FALSE
-        END AS is_late_payment,
-        DATE_TRUNC('month', j.payment_date) AS payment_month
-    FROM joined j
 )
 
+-- Final model: derive additional metrics
 SELECT
     ROW_NUMBER() OVER (ORDER BY payment_id) AS payment_sk,
     payment_id,
@@ -68,11 +90,21 @@ SELECT
     customer_id,
     payment_amount,
     payment_date,
-    payment_month,
+    DATE_TRUNC('month', payment_date) AS payment_month,
     payment_type,
-    is_late_payment,
+    CASE 
+        WHEN payment_date > end_date THEN TRUE ELSE FALSE
+    END AS is_late_payment,
     loan_status,
     interest_rate,
     start_date,
-    end_date
-FROM enhanced
+    end_date,
+    record_loaded_at,
+    CURRENT_TIMESTAMP() AS record_updated_at
+FROM joined
+
+{% if is_incremental() %}
+  WHERE record_loaded_at > (
+      SELECT COALESCE(MAX(record_loaded_at), '1900-01-01') FROM {{ this }}
+  )
+{% endif %}
