@@ -1,5 +1,11 @@
-{{ config(materialized='table') }}
-
+{{
+    config(
+        materialized='incremental',
+        unique_key='payment_id',
+        incremental_strategy='merge'
+    )
+}}
+    
 SELECT
     payment_id,
     loan_id,
