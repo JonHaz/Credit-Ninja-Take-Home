@@ -7,4 +7,4 @@ SELECT
     CAST(loan_amount_requested AS DECIMAL(10,2)) AS loan_amount_requested,
     status,
     updated_at
-FROM {{ source('bronze', 'loan_applications') }}
+FROM {{ source('snowflake', 'loan_applications') }}
